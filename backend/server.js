@@ -179,13 +179,29 @@ app.post('/api/transaction', async (req, res) => {
 // Get all transactions endpoint
 app.get('/api/transactions', async (req, res) => {
   try {
-    const txs = await Transaction.find().sort({ date: -1, _id: -1 });
-    res.json(txs);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const total = await Transaction.countDocuments();
+    const txs = await Transaction.find()
+      .sort({ date: -1, _id: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    // Convert _id to id in API response
+    const withIds = txs.map(tx => ({
+      ...tx._doc, // or use tx.toObject() if available
+      id: tx._id
+    }));
+
+    res.json({ total, page, limit, transactions: withIds });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch transactions' });
   }
 });
+
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
