@@ -282,7 +282,7 @@ const AddTransaction = ({ addTransaction }: AddTransactionProps) => {
 
     toast({
       title: "Transaction Added",
-      description: `${formData.type === 'income' ? 'Income' : 'Expense'} of $${formData.amount} has been recorded`,
+      description: `${formData.type === 'income' ? 'Income' : 'Expense'} of ₹${formData.amount} has been recorded`,
     });
 
     setFormData({

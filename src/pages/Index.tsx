@@ -81,7 +81,6 @@
 // };
 
 // export default Index;
-
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import Dashboard from "@/components/Dashboard";
@@ -95,14 +94,20 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
+
+  // Fetch transactions once on mount, sort descending by date
   useEffect(() => {
     fetch("http://localhost:5000/api/transactions")
       .then((res) => res.json())
-      .then((data: Transaction[]) => setTransactions(data))
+      .then((data: Transaction[]) => {
+        // Sort by date descending (newest first)
+        data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTransactions(data);
+      })
       .catch(() => setTransactions([]));
   }, []);
 
-  // Add transaction: send to backend, then update state
+  // Single addTransaction function with sorting and id assignment
   const addTransaction = async (tx: Omit<Transaction, "id">) => {
     try {
       const res = await fetch("http://localhost:5000/api/transaction", {
@@ -112,27 +117,35 @@ const Index = () => {
       });
       const data = await res.json();
       if (data.success) {
-        // You can re-fetch all transactions here for strong consistency,
-        // or optimistically add the new transaction to state:
-        setTransactions((prev) => [{ ...tx, id: Date.now() }, ...prev]);
+        const newTx = {
+          ...tx,
+          id: data.transaction?.id || Date.now(),
+          date: tx.date ?? new Date().toISOString().split("T")[0],
+        };
+        setTransactions((prev) => {
+          const newList = [newTx, ...prev];
+          newList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          return newList;
+        });
       }
-    } catch {
+    } catch (error) {
       // handle errors if needed
+      console.error("Failed to add transaction", error);
     }
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":
+        // Pass recent 4 transactions to Dashboard (newest first)
         return <Dashboard onPageChange={setCurrentPage} recentTransactions={transactions.slice(0, 4)} />;
       case "add-transaction":
         return <AddTransaction addTransaction={addTransaction} />;
       case "transactions":
         return <TransactionList transactions={transactions} />;
       case "analytics":
-        return <Analytics />;
+        return <Analytics transactions={transactions} />;
       case "receipts":
-        // Pass the addTransaction prop here
         return <ReceiptScanner addTransaction={addTransaction} />;
       default:
         return <Dashboard onPageChange={setCurrentPage} recentTransactions={transactions.slice(0, 4)} />;
@@ -147,4 +160,3 @@ const Index = () => {
 };
 
 export default Index;
-

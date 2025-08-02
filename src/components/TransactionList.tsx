@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,11 +93,11 @@ const TransactionList = ({ transactions }: TransactionListProps) => {
         <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Total Income</p>
-            <p className="text-lg font-bold text-success">${totalIncome.toLocaleString()}</p>
+            <p className="text-lg font-bold text-success">₹{totalIncome.toLocaleString()}</p>
           </div>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Total Expenses</p>
-            <p className="text-lg font-bold text-destructive">${totalExpenses.toLocaleString()}</p>
+            <p className="text-lg font-bold text-destructive">₹{totalExpenses.toLocaleString()}</p>
           </div>
         </div>
       </div>
@@ -237,7 +236,7 @@ const TransactionList = ({ transactions }: TransactionListProps) => {
                     <div className={`text-lg font-semibold ${
                       transaction.type === 'income' ? 'text-success' : 'text-destructive'
                     }`}>
-                      {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
+                      {transaction.amount > 0 ? '+' : ''}₹{Math.abs(transaction.amount).toLocaleString("en-IN")}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button variant="ghost" size="icon" className="w-8 h-8">
