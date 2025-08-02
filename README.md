@@ -120,3 +120,16 @@ Proper error handling and user feedback
 Separation of concerns (models, routes, middleware)
 
 Environment variables for secrets
+
+** Requirments **
+
+✅ Ability to create a income / expenses entry through the web app.
+✅ List all income / expenses in a time range through web app app.
+✅ Ability to show some graphs like (expenses by category, expense by data
+etc.,)
+✅ Ability to extract expenses from a uploaded receipt (Images, pdf). These
+are pos recipts.
+✅ Support upload of transaction history from pdf. The PDF represents a
+tabular format.
+✅ Support for pagination of the list api
+❌ Supporting multiple users who can use the web app
