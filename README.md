@@ -1,73 +1,121 @@
-# Welcome to your Lovable project
+FinanceTracker Pro
+A full-stack web app to track and analyze your personal finances, supporting multi-user authentication, receipt scanning via OCR, PDF parsing, transaction analytics, and robust pagination.
 
-## Project info
+🚀 Features
+Secure multi-user authentication (JWT-based login/signup)
 
-**URL**: https://lovable.dev/projects/8ea43599-56f6-4464-8e17-b451ef1ce816
+Personalized dashboard: Each user sees only their own data
 
-## How can I edit this code?
+Add, view, and categorize transactions
 
-There are several ways of editing your application.
+Upload and auto-parse PDF bank statements
 
-**Use Lovable**
+Scan receipts via OCR for quick adds
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8ea43599-56f6-4464-8e17-b451ef1ce816) and start prompting.
+Data filtering, search, and pagination
 
-Changes made via Lovable will be committed automatically to this repo.
+Visual analytics
 
-**Use your preferred IDE**
+Modern React (Vite) + Express + MongoDB stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+🗂️ Project Structure
+text
+receipt-reader/
+  backend/
+    models/
+      User.js
+    routes/
+      auth.js
+    middleware/
+      auth.js
+    server.js
+    .env
+  src/
+    components/
+    context/
+      AuthContext.tsx
+    pages/
+      Login.tsx
+      Signup.tsx
+      ...
+    main.tsx
+    App.tsx
+    index.css
+  ...
+🛠️ Setup Instructions
+Prerequisites
+Node.js (18+ recommended)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+MongoDB instance running (local or cloud)
 
-Follow these steps:
+1. Clone the repository
+text
+git clone <your-repo-url>
+cd receipt-reader
+2. Backend Setup
+text
+cd backend
+npm install
+Configure environment variables
+Create a .env file in /backend:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+text
+MONGO_URI=mongodb://localhost:27017/finance-tracker
+JWT_SECRET=your_very_secret_and_long_random_key
+Start the backend server:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+text
+node server.js
+3. Frontend Setup
+text
+cd ../
+npm install
 npm run dev
-```
+Frontend will run by default at http://localhost:8080
 
-**Edit a file directly in GitHub**
+✨ Usage
+Open http://localhost:8080 in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Signup with your email and a password.
 
-**Use GitHub Codespaces**
+Login, then add, scan, or upload transactions.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Only your own transactions are visible to you.
 
-## What technologies are used for this project?
+🧩 Key Technologies
+Frontend: React (Vite), TypeScript, React Router, Context API (Auth), Tailwind/Shadcn UI (optional)
 
-This project is built with:
+Backend: Node.js, Express, MongoDB, Mongoose
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Auth: JWT, bcryptjs
 
-## How can I deploy this project?
+OCR: Tesseract.js
 
-Simply open [Lovable](https://lovable.dev/projects/8ea43599-56f6-4464-8e17-b451ef1ce816) and click on Share -> Publish.
+PDF Extraction: pdf-parse
 
-## Can I connect a custom domain to my Lovable project?
+📖 Development Notes
+All auth-protected routes require a valid JWT in the Authorization: Bearer <token> header.
 
-Yes, you can!
+Most POST/GET routes validate input and handle errors gracefully.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Transactions are always associated with the current user (by userId).
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+🧑💻 Scripts
+Backend:
+
+text
+npm install         # in /backend
+node server.js
+Frontend:
+
+text
+npm install         # in root
+npm run dev
+🛡️ Best Practices Followed
+Clean, readable and modular code
+
+Proper error handling and user feedback
+
+Separation of concerns (models, routes, middleware)
+
+Environment variables for secrets
