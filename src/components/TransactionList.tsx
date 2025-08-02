@@ -1,103 +1,30 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label"; 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  Filter, 
-  ArrowUpDown, 
-  Calendar,
-  DollarSign,
-  Edit,
-  Trash2
-} from "lucide-react";
+import { Search, Filter, ArrowUpDown, Calendar as CalendarIcon, DollarSign, Edit, Trash2 } from "lucide-react";
+import type { Transaction } from "@/pages/Index";
 
-const TransactionList = () => {
+type TransactionListProps = {
+  transactions: Transaction[];
+};
+
+const TransactionList = ({ transactions }: TransactionListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortBy, setSortBy] = useState("date");
-
-  // Mock data - replace with real data later
-  const transactions = [
-    { 
-      id: 1, 
-      description: "Monthly Salary", 
-      amount: 5200.00, 
-      type: "income", 
-      date: "2024-01-15", 
-      category: "Salary",
-      notes: "Regular monthly payment"
-    },
-    { 
-      id: 2, 
-      description: "Grocery Shopping - Whole Foods", 
-      amount: -120.50, 
-      type: "expense", 
-      date: "2024-01-14", 
-      category: "Food",
-      notes: "Weekly groceries"
-    },
-    { 
-      id: 3, 
-      description: "Netflix Subscription", 
-      amount: -15.99, 
-      type: "expense", 
-      date: "2024-01-13", 
-      category: "Entertainment",
-      notes: "Monthly subscription"
-    },
-    { 
-      id: 4, 
-      description: "Freelance Web Design", 
-      amount: 800.00, 
-      type: "income", 
-      date: "2024-01-12", 
-      category: "Freelance",
-      notes: "Client project completion"
-    },
-    { 
-      id: 5, 
-      description: "Gas Station - Shell", 
-      amount: -45.20, 
-      type: "expense", 
-      date: "2024-01-11", 
-      category: "Transportation",
-      notes: "Car fuel"
-    },
-    { 
-      id: 6, 
-      description: "Coffee Shop", 
-      amount: -6.50, 
-      type: "expense", 
-      date: "2024-01-10", 
-      category: "Food",
-      notes: "Morning coffee"
-    },
-    { 
-      id: 7, 
-      description: "Investment Dividend", 
-      amount: 150.00, 
-      type: "income", 
-      date: "2024-01-09", 
-      category: "Investment",
-      notes: "Quarterly dividend payment"
-    },
-    { 
-      id: 8, 
-      description: "Electric Bill", 
-      amount: -89.30, 
-      type: "expense", 
-      date: "2024-01-08", 
-      category: "Utilities",
-      notes: "Monthly utility bill"
-    }
-  ];
+  // Add date range states as strings in YYYY-MM-DD format
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
+      /* ...your existing category color mapping... */
       "Salary": "bg-success/20 text-success",
       "Freelance": "bg-accent/20 text-accent",
       "Investment": "bg-primary/20 text-primary",
@@ -120,11 +47,22 @@ const TransactionList = () => {
 
   const filteredTransactions = transactions
     .filter(transaction => {
-      const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
+
       const matchesType = filterType === "all" || transaction.type === filterType;
+
       const matchesCategory = filterCategory === "all" || transaction.category === filterCategory;
-      return matchesSearch && matchesType && matchesCategory;
+
+      // Date range filter logic
+      const transactionDate = new Date(transaction.date);
+      const afterStartDate = startDate ? (transactionDate >= new Date(startDate)) : true;
+      const beforeEndDate = endDate ? (transactionDate <= new Date(endDate)) : true;
+
+      const matchesDateRange = afterStartDate && beforeEndDate;
+
+      return matchesSearch && matchesType && matchesCategory && matchesDateRange;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -174,7 +112,7 @@ const TransactionList = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4 items-center">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -186,6 +124,7 @@ const TransactionList = () => {
                 />
               </div>
             </div>
+
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="lg:w-[150px]">
                 <SelectValue placeholder="Type" />
@@ -196,6 +135,7 @@ const TransactionList = () => {
                 <SelectItem value="expense">Expense</SelectItem>
               </SelectContent>
             </Select>
+
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger className="lg:w-[150px]">
                 <SelectValue placeholder="Category" />
@@ -208,8 +148,32 @@ const TransactionList = () => {
                 <SelectItem value="Transportation">Transportation</SelectItem>
                 <SelectItem value="Entertainment">Entertainment</SelectItem>
                 <SelectItem value="Utilities">Utilities</SelectItem>
+                {/* Add other categories as needed */}
               </SelectContent>
             </Select>
+
+            {/* New Date Range Filters */}
+            <div>
+              <Label htmlFor="start-date">Start Date</Label>
+              <Input
+                type="date"
+                id="start-date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                max={endDate || undefined}
+              />
+            </div>
+            <div>
+              <Label htmlFor="end-date">End Date</Label>
+              <Input
+                type="date"
+                id="end-date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate || undefined}
+              />
+            </div>
+
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="lg:w-[150px]">
                 <SelectValue placeholder="Sort by" />
@@ -258,8 +222,10 @@ const TransactionList = () => {
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(transaction.date).toLocaleDateString()}
+                          <CalendarIcon className="w-3 h-3" />
+                          {typeof transaction.date === "string"
+                            ? new Date(transaction.date).toLocaleDateString()
+                            : transaction.date.toLocaleDateString()}
                         </span>
                         {transaction.notes && (
                           <span className="truncate max-w-[200px]">{transaction.notes}</span>
@@ -293,3 +259,5 @@ const TransactionList = () => {
 };
 
 export default TransactionList;
+
+

@@ -1,3 +1,377 @@
+// import { useState, useRef } from "react";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { Label } from "@/components/ui/label";
+// import { useToast } from "@/hooks/use-toast";
+// import { 
+//   Upload, 
+//   Camera, 
+//   FileText, 
+//   Loader2,
+//   CheckCircle,
+//   AlertCircle,
+//   Receipt,
+//   Scan
+// } from "lucide-react";
+// import type { Transaction } from "@/pages/Index";
+
+// type ReceiptScannerProps = {
+//   addTransaction: (tx: Omit<Transaction, "id">) => void;
+// };
+
+// const ReceiptScanner = ({ addTransaction }: ReceiptScannerProps) => {
+//   const { toast } = useToast();
+//   const fileInputRef = useRef<HTMLInputElement>(null);
+//   const [isProcessing, setIsProcessing] = useState(false);
+//   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+//   const [extractedData, setExtractedData] = useState<any>(null);
+
+//   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = event.target.files?.[0];
+//     if (!file) return;
+
+//     // Validate file type
+//     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+//     if (!validTypes.includes(file.type)) {
+//       toast({
+//         title: "Invalid File Type",
+//         description: "Please upload a JPG, PNG, or PDF file",
+//         variant: "destructive",
+//       });
+//       return;
+//     }
+
+//     // Validate file size (10MB max)
+//     if (file.size > 10 * 1024 * 1024) {
+//       toast({
+//         title: "File Too Large",
+//         description: "Please upload a file smaller than 10MB",
+//         variant: "destructive",
+//       });
+//       return;
+//     }
+
+//     setUploadedFile(file);
+//     processReceipt(file);
+//   };
+
+//   const processReceipt = async (file: File) => {
+//     setIsProcessing(true);
+//     setExtractedData(null);
+
+//     const formData = new FormData();
+//     formData.append('file', file);
+
+//     try {
+//       const res = await fetch('http://localhost:5000/api/receipt', {
+//         method: 'POST',
+//         body: formData,
+//       });
+//       if (!res.ok) throw new Error("Receipt extract failed");
+//       const data = await res.json();
+
+//       setExtractedData(data);
+//       toast({
+//         title: "Receipt Processed Successfully",
+//         description: `Extracted total: ${data.total}`,
+//       });
+//     } catch (error) {
+//       toast({
+//         title: "Processing Failed",
+//         description: "Failed to extract data from receipt. Please try again.",
+//         variant: "destructive",
+//       });
+//     } finally {
+//       setIsProcessing(false);
+//     }
+//   };
+
+//   const handleSaveTransactions = async () => {
+//     if (!extractedData) return;
+
+//     try {
+//       // Save total transaction (optional)
+//       await addTransaction({
+//         description: `Receipt: ${extractedData.merchantName}`,
+//         amount: -Math.abs(extractedData.total),
+//         type: "expense",
+//         date: extractedData.date,
+//         category: "Food",
+//         notes: extractedData.rawText?.slice(0, 100) || "",
+//       });
+
+//       // Save each extracted item as separate transaction
+//       if (Array.isArray(extractedData.items)) {
+//         for (const item of extractedData.items) {
+//           await addTransaction({
+//             description: item.description,
+//             amount: -Math.abs(item.amount),
+//             type: "expense",
+//             date: extractedData.date,
+//             category: item.category || "Food",
+//             notes: "",
+//           });
+//         }
+//       }
+
+//       toast({
+//         title: "Transactions Saved",
+//         description: "Receipt expense(s) have been added to your account",
+//       });
+
+//       // Reset after saving
+//       setUploadedFile(null);
+//       setExtractedData(null);
+//       if (fileInputRef.current) fileInputRef.current.value = '';
+//     } catch (error) {
+//       toast({
+//         title: "Save Failed",
+//         description: "Failed to save transactions. Please try again.",
+//         variant: "destructive",
+//       });
+//     }
+//   };
+
+//   const getCategoryColor = (category: string) => {
+//     const colors: Record<string, string> = {
+//       "Food": "bg-warning/20 text-warning",
+//       "Tax": "bg-destructive/20 text-destructive",
+//       // Add more if needed
+//       "Other": "bg-muted",
+//     };
+//     return colors[category] || "bg-muted";
+//   };
+
+//   return (
+//     <div className="max-w-4xl mx-auto space-y-6 animate-slide-up">
+//       {/* Header */}
+//       <div className="text-center">
+//         <h1 className="text-3xl font-bold text-foreground">Receipt Scanner</h1>
+//         <p className="text-muted-foreground mt-2">Upload receipts to automatically extract expense data</p>
+//       </div>
+
+//       {/* Upload Area */}
+//       <Card className="gradient-card shadow-card">
+//         <CardHeader>
+//           <CardTitle className="flex items-center gap-2">
+//             <Receipt className="w-5 h-5 text-primary" />
+//             Upload Receipt
+//           </CardTitle>
+//         </CardHeader>
+//         <CardContent>
+//           <div className="border-2 border-dashed border-border rounded-lg p-8 text-center space-y-4">
+//             {!uploadedFile ? (
+//               <>
+//                 <div className="flex justify-center">
+//                   <Upload className="w-12 h-12 text-muted-foreground" />
+//                 </div>
+//                 <div>
+//                   <p className="text-lg font-medium text-foreground">Upload your receipt</p>
+//                   <p className="text-muted-foreground">Supports JPG, PNG, and PDF files up to 10MB</p>
+//                 </div>
+//                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
+//                   <Button 
+//                     onClick={() => fileInputRef.current?.click()}
+//                     className="gap-2"
+//                   >
+//                     <FileText className="w-4 h-4" />
+//                     Choose File
+//                   </Button>
+//                   <Button 
+//                     variant="outline" 
+//                     className="gap-2"
+//                     onClick={() => {
+//                       toast({
+//                         title: "Camera Feature",
+//                         description: "Camera capture would be available in the mobile app",
+//                       });
+//                     }}
+//                   >
+//                     <Camera className="w-4 h-4" />
+//                     Take Photo
+//                   </Button>
+//                 </div>
+//                 <input
+//                   ref={fileInputRef}
+//                   type="file"
+//                   accept="image/*,.pdf"
+//                   onChange={handleFileUpload}
+//                   className="hidden"
+//                 />
+//               </>
+//             ) : (
+//               <div className="space-y-4">
+//                 <div className="flex justify-center">
+//                   {isProcessing ? (
+//                     <Loader2 className="w-12 h-12 text-primary animate-spin" />
+//                   ) : extractedData ? (
+//                     <CheckCircle className="w-12 h-12 text-success" />
+//                   ) : (
+//                     <Scan className="w-12 h-12 text-primary" />
+//                   )}
+//                 </div>
+//                 <div>
+//                   <p className="text-lg font-medium text-foreground">
+//                     {uploadedFile.name}
+//                   </p>
+//                   <p className="text-muted-foreground">
+//                     {isProcessing ? "Processing receipt..." : 
+//                      extractedData ? "Receipt processed successfully" : "Ready to process"}
+//                   </p>
+//                 </div>
+//                 {!isProcessing && !extractedData && (
+//                   <Button 
+//                     onClick={() => processReceipt(uploadedFile)}
+//                     className="gap-2"
+//                   >
+//                     <Scan className="w-4 h-4" />
+//                     Process Receipt
+//                   </Button>
+//                 )}
+//               </div>
+//             )}
+//           </div>
+//         </CardContent>
+//       </Card>
+
+//       {/* Extracted Data */}
+//       {extractedData && (
+//         <Card className="gradient-card shadow-card">
+//           <CardHeader>
+//             <CardTitle className="flex items-center justify-between">
+//               <div className="flex items-center gap-2">
+//                 <CheckCircle className="w-5 h-5 text-success" />
+//                 Extracted Data
+//               </div>
+//               <div className="flex items-center gap-2 text-sm">
+//                 <span className="text-muted-foreground">Confidence:</span>
+//                 <span className="font-semibold text-success">
+//                   {(extractedData.confidence * 100).toFixed(0)}%
+//                 </span>
+//               </div>
+//             </CardTitle>
+//           </CardHeader>
+//           <CardContent className="space-y-6">
+//             {/* Receipt Info */}
+//             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-background rounded-lg border border-border">
+//               <div>
+//                 <p className="text-sm text-muted-foreground">Merchant</p>
+//                 <p className="font-semibold text-foreground">{extractedData.merchantName || "Unknown"}</p>
+//               </div>
+//               <div>
+//                 <p className="text-sm text-muted-foreground">Date</p>
+//                 <p className="font-semibold text-foreground">{extractedData.date || "N/A"}</p>
+//               </div>
+//               <div>
+//                 <p className="text-sm text-muted-foreground">Total</p>
+//                 <p className="font-semibold text-destructive">${extractedData.total ?? "0.00"}</p>
+//               </div>
+//             </div>
+
+//             {/* Items */}
+//             <div>
+//               <h3 className="font-semibold text-foreground mb-4">
+//                 Items ({Array.isArray(extractedData?.items) ? extractedData.items.length : 0})
+//               </h3>
+//               <div className="space-y-2">
+//                 {Array.isArray(extractedData?.items) && extractedData.items.length > 0 ? (
+//                   extractedData.items.map((item: any, index: number) => (
+//                     <div key={index} className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
+//                       <div className="flex-1">
+//                         <p className="font-medium text-foreground">{item.description}</p>
+//                         <p className="text-sm text-muted-foreground">Category: {item.category}</p>
+//                       </div>
+//                       <p className="font-semibold text-destructive">${item.amount}</p>
+//                     </div>
+//                   ))
+//                 ) : (
+//                   <p className="text-muted-foreground">No items found in receipt.</p>
+//                 )}
+//               </div>
+//             </div>
+
+//             {/* Actions */}
+//             <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-border">
+//               <Button 
+//                 onClick={handleSaveTransactions}
+//                 className="flex-1 gap-2"
+//                 variant="success"
+//               >
+//                 <CheckCircle className="w-4 h-4" />
+//                 Save All Transactions
+//               </Button>
+//               <Button 
+//                 variant="outline" 
+//                 className="flex-1"
+//                 onClick={() => {
+//                   setUploadedFile(null);
+//                   setExtractedData(null);
+//                   if (fileInputRef.current) {
+//                     fileInputRef.current.value = '';
+//                   }
+//                 }}
+//               >
+//                 Upload Another Receipt
+//               </Button>
+//             </div>
+
+//             {/* Note */}
+//             <div className="flex items-start gap-3 p-4 bg-warning/10 rounded-lg border border-warning/20">
+//               <AlertCircle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
+//               <div>
+//                 <p className="font-medium text-warning">Review Before Saving</p>
+//                 <p className="text-sm text-muted-foreground">
+//                   Please review the extracted data for accuracy before saving. You can edit any items if needed.
+//                 </p>
+//               </div>
+//             </div>
+//           </CardContent>
+//         </Card>
+//       )}
+
+//       {/* Features Info */}
+//       <Card className="gradient-card shadow-card">
+//         <CardHeader>
+//           <CardTitle>How It Works</CardTitle>
+//         </CardHeader>
+//         <CardContent>
+//           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+//             <div className="text-center space-y-3">
+//               <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto">
+//                 <Upload className="w-6 h-6 text-primary-foreground" />
+//               </div>
+//               <h3 className="font-semibold text-foreground">1. Upload</h3>
+//               <p className="text-sm text-muted-foreground">
+//                 Upload a photo or PDF of your receipt from any device
+//               </p>
+//             </div>
+//             <div className="text-center space-y-3">
+//               <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto">
+//                 <Scan className="w-6 h-6 text-primary-foreground" />
+//               </div>
+//               <h3 className="font-semibold text-foreground">2. Process</h3>
+//               <p className="text-sm text-muted-foreground">
+//                 Our AI extracts merchant, date, items, and amounts automatically
+//               </p>
+//             </div>
+//             <div className="text-center space-y-3">
+//               <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto">
+//                 <CheckCircle className="w-6 h-6 text-primary-foreground" />
+//               </div>
+//               <h3 className="font-semibold text-foreground">3. Save</h3>
+//               <p className="text-sm text-muted-foreground">
+//                 Review and save the transactions to your account
+//               </p>
+//             </div>
+//           </div>
+//         </CardContent>
+//       </Card>
+//     </div>
+//   );
+// };
+
+// export default ReceiptScanner;
+
 import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,116 +386,154 @@ import {
   Receipt,
   Scan
 } from "lucide-react";
+import type { Transaction } from "@/pages/Index";
 
-const ReceiptScanner = () => {
+type ReceiptScannerProps = {
+  addTransaction: (tx: Omit<Transaction, "id">) => void;
+};
+
+const ReceiptScanner = ({ addTransaction }: ReceiptScannerProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [extractedData, setExtractedData] = useState<any>(null);
+  const [extractedData, setExtractedData] = useState<any>(null); // For images
+  const [parsedTransactions, setParsedTransactions] = useState<Transaction[]>([]); // For PDFs
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-      toast({
-        title: "Invalid File Type",
-        description: "Please upload a JPG, PNG, or PDF file",
-        variant: "destructive",
-      });
+      toast({ title: "Invalid File Type", description: "Please upload a JPG, PNG, or PDF file", variant: "destructive" });
       return;
     }
-
-    // Validate file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: "Please upload a file smaller than 10MB",
-        variant: "destructive",
-      });
+      toast({ title: "File Too Large", description: "Please upload a file smaller than 10MB", variant: "destructive" });
       return;
     }
-
     setUploadedFile(file);
-    processReceipt(file);
+    if(file.type === 'application/pdf') {
+      processPdf(file);
+      setExtractedData(null);
+    } else {
+      processReceipt(file);
+      setParsedTransactions([]);
+    }
   };
 
-  const processReceipt = async (file: File) => {
+  const processPdf = async (file: File) => {
     setIsProcessing(true);
-    setExtractedData(null);
-
+    setParsedTransactions([]);
+    const formData = new FormData();
+    formData.append('file', file);
     try {
-      // Simulate OCR processing with mock data
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Mock extracted data - replace with actual OCR service
-      const mockData = {
-        merchantName: "SuperMart Grocery Store",
-        date: "2024-01-15",
-        total: 127.45,
-        items: [
-          { description: "Organic Bananas", amount: 3.99, category: "Food" },
-          { description: "Whole Wheat Bread", amount: 4.50, category: "Food" },
-          { description: "Chicken Breast", amount: 12.99, category: "Food" },
-          { description: "Greek Yogurt", amount: 5.99, category: "Food" },
-          { description: "Orange Juice", amount: 6.99, category: "Food" },
-          { description: "Tax", amount: 2.99, category: "Tax" }
-        ],
-        confidence: 0.92
-      };
-
-      setExtractedData(mockData);
-      
-      toast({
-        title: "Receipt Processed Successfully",
-        description: `Extracted ${mockData.items.length} items with ${(mockData.confidence * 100).toFixed(0)}% confidence`,
-      });
-
+      const res = await fetch('http://localhost:5000/api/upload-pdf', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error("PDF extract failed");
+      const data = await res.json();
+      if (Array.isArray(data.transactions)) {
+        setParsedTransactions(data.transactions);
+        toast({ title: "PDF Parsed Successfully", description: `Extracted ${data.transactions.length} transactions` });
+      } else {
+        toast({ title: "No transactions found", description: "Could not find any transactions in this PDF", variant: "destructive" });
+        setParsedTransactions([]);
+      }
     } catch (error) {
-      toast({
-        title: "Processing Failed",
-        description: "Failed to extract data from receipt. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Processing Failed", description: "Failed to extract data from PDF. Please try again.", variant: "destructive" });
+      setParsedTransactions([]);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleSaveTransactions = () => {
-    if (!extractedData) return;
-
-    // Here you would save each item as a transaction
-    toast({
-      title: "Transactions Saved",
-      description: `${extractedData.items.length} transactions have been added to your account`,
-    });
-
-    // Reset the component
-    setUploadedFile(null);
-    setExtractedData(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const processReceipt = async (file: File) => {
+    setIsProcessing(true);
+    setExtractedData(null);    
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch('http://localhost:5000/api/receipt', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error("Receipt extract failed");
+      const data = await res.json();
+      setExtractedData(data);
+      toast({ title: "Receipt Processed Successfully", description: `Extracted total: ${data.total}` });
+    } catch (error) {
+      toast({ title: "Processing Failed", description: "Failed to extract data from receipt. Please try again.", variant: "destructive" });
+      setExtractedData(null);
+    } finally {
+      setIsProcessing(false);
     }
+  };
+
+  const handleSaveTransactions = async () => {
+    if(extractedData) {
+      try {
+        await addTransaction({
+          description: `Receipt: ${extractedData.merchantName}`,
+          amount: -Math.abs(extractedData.total),
+          type: "expense",
+          date: extractedData.date,
+          category: "Food",
+          notes: extractedData.rawText?.slice(0, 100) || "",
+        });
+        if (Array.isArray(extractedData.items)) {
+          for (const item of extractedData.items) {
+            await addTransaction({
+              description: item.description,
+              amount: -Math.abs(item.amount),
+              type: "expense",
+              date: extractedData.date,
+              category: item.category || "Food",
+              notes: "",
+            });
+          }
+        }
+        toast({ title: "Transactions Saved", description: "Receipt expense(s) have been added to your account" });
+        setUploadedFile(null);
+        setExtractedData(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      } catch (error) {
+        toast({ title: "Save Failed", description: "Failed to save transactions. Please try again.", variant: "destructive" });
+      }
+      return;
+    }
+    if (parsedTransactions.length > 0) {
+      try {
+        for (const tx of parsedTransactions) {
+          await addTransaction({
+            description: tx.description,
+            amount: Number(tx.amount),
+            type: Number(tx.amount) < 0 ? "expense" : "income",
+            date: tx.date,
+            category: tx.category || "Other",
+            notes: tx.notes || "",
+          });
+        }
+        toast({ title: "Transactions Saved", description: `Saved ${parsedTransactions.length} transactions from PDF` });
+        setUploadedFile(null);
+        setParsedTransactions([]);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      } catch (error) {
+        toast({ title: "Save Failed", description: "Failed to save transactions from PDF. Please try again.", variant: "destructive" });
+      }
+      return;
+    }
+    toast({ title: "No Data", description: "No receipt or PDF data to save", variant: "destructive" });
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-slide-up">
-      {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-foreground">Receipt Scanner</h1>
-        <p className="text-muted-foreground mt-2">Upload receipts to automatically extract expense data</p>
+        <h1 className="text-3xl font-bold text-foreground">Receipt & PDF Scanner</h1>
+        <p className="text-muted-foreground mt-2">
+          Upload receipts (images) or transaction history (PDF) files to extract expenses.
+        </p>
       </div>
-
-      {/* Upload Area */}
       <Card className="gradient-card shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-primary" />
-            Upload Receipt
+            Upload Receipt or PDF
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -132,8 +544,8 @@ const ReceiptScanner = () => {
                   <Upload className="w-12 h-12 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-lg font-medium text-foreground">Upload your receipt</p>
-                  <p className="text-muted-foreground">Supports JPG, PNG, and PDF files up to 10MB</p>
+                  <p className="text-lg font-medium text-foreground">Upload your receipt or PDF</p>
+                  <p className="text-muted-foreground">Supports JPG, PNG, PDF files up to 10MB</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button 
@@ -147,7 +559,6 @@ const ReceiptScanner = () => {
                     variant="outline" 
                     className="gap-2"
                     onClick={() => {
-                      // Simulate camera capture - would open camera in real app
                       toast({
                         title: "Camera Feature",
                         description: "Camera capture would be available in the mobile app",
@@ -171,7 +582,7 @@ const ReceiptScanner = () => {
                 <div className="flex justify-center">
                   {isProcessing ? (
                     <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                  ) : extractedData ? (
+                  ) : extractedData || parsedTransactions.length > 0 ? (
                     <CheckCircle className="w-12 h-12 text-success" />
                   ) : (
                     <Scan className="w-12 h-12 text-primary" />
@@ -182,17 +593,25 @@ const ReceiptScanner = () => {
                     {uploadedFile.name}
                   </p>
                   <p className="text-muted-foreground">
-                    {isProcessing ? "Processing receipt..." : 
-                     extractedData ? "Receipt processed successfully" : "Ready to process"}
+                    {isProcessing ? "Processing file..." : 
+                     extractedData || parsedTransactions.length > 0 ? "File processed successfully" : "Ready to process"}
                   </p>
                 </div>
-                {!isProcessing && !extractedData && (
+                {!isProcessing && !extractedData && parsedTransactions.length === 0 && (
                   <Button 
-                    onClick={() => processReceipt(uploadedFile)}
+                    onClick={() => {
+                      if(uploadedFile) {
+                        if(uploadedFile.type === 'application/pdf'){
+                          processPdf(uploadedFile);
+                        } else {
+                          processReceipt(uploadedFile);
+                        }
+                      }
+                    }}
                     className="gap-2"
                   >
                     <Scan className="w-4 h-4" />
-                    Process Receipt
+                    Process File
                   </Button>
                 )}
               </div>
@@ -200,135 +619,101 @@ const ReceiptScanner = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Extracted Data */}
       {extractedData && (
         <Card className="gradient-card shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-success" />
-                Extracted Data
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Confidence:</span>
-                <span className="font-semibold text-success">
-                  {(extractedData.confidence * 100).toFixed(0)}%
-                </span>
+                Extracted Receipt Data
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Receipt Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-background rounded-lg border border-border">
               <div>
                 <p className="text-sm text-muted-foreground">Merchant</p>
-                <p className="font-semibold text-foreground">{extractedData.merchantName}</p>
+                <p className="font-semibold text-foreground">{extractedData.merchantName || "Unknown"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Date</p>
-                <p className="font-semibold text-foreground">{extractedData.date}</p>
+                <p className="font-semibold text-foreground">{extractedData.date || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total</p>
-                <p className="font-semibold text-destructive">${extractedData.total}</p>
+                <p className="font-semibold text-destructive">${extractedData.total ?? "0.00"}</p>
               </div>
             </div>
-
-            {/* Items */}
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Items ({extractedData.items.length})</h3>
+              <h3 className="font-semibold text-foreground mb-4">
+                Items ({Array.isArray(extractedData?.items) ? extractedData.items.length : 0})
+              </h3>
               <div className="space-y-2">
-                {extractedData.items.map((item: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{item.description}</p>
-                      <p className="text-sm text-muted-foreground">Category: {item.category}</p>
+                {Array.isArray(extractedData?.items) && extractedData.items.length > 0 ? (
+                  extractedData.items.map((item: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{item.description}</p>
+                        <p className="text-sm text-muted-foreground">Category: {item.category}</p>
+                      </div>
+                      <p className="font-semibold text-destructive">${item.amount}</p>
                     </div>
-                    <p className="font-semibold text-destructive">${item.amount}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-border">
-              <Button 
-                onClick={handleSaveTransactions}
-                className="flex-1 gap-2"
-                variant="success"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Save All Transactions
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => {
-                  setUploadedFile(null);
-                  setExtractedData(null);
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                  }
-                }}
-              >
-                Upload Another Receipt
-              </Button>
-            </div>
-
-            {/* Note */}
-            <div className="flex items-start gap-3 p-4 bg-warning/10 rounded-lg border border-warning/20">
-              <AlertCircle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-warning">Review Before Saving</p>
-                <p className="text-sm text-muted-foreground">
-                  Please review the extracted data for accuracy before saving. You can edit any items if needed.
-                </p>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No items found in receipt.</p>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
       )}
+      {parsedTransactions.length > 0 && (
+        <Card className="gradient-card shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-success" />
+                Parsed Transactions from PDF
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {parsedTransactions.map((tx, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{tx.description}</p>
+                  <p className="text-sm text-muted-foreground">{tx.category} • {tx.date}</p>
+                </div>
+                <p className={`font-semibold ${tx.amount < 0 ? "text-destructive" : "text-success"}`}>
+                  ${Math.abs(tx.amount).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Features Info */}
-      <Card className="gradient-card shadow-card">
-        <CardHeader>
-          <CardTitle>How It Works</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto">
-                <Upload className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <h3 className="font-semibold text-foreground">1. Upload</h3>
-              <p className="text-sm text-muted-foreground">
-                Upload a photo or PDF of your receipt from any device
-              </p>
-            </div>
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto">
-                <Scan className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <h3 className="font-semibold text-foreground">2. Process</h3>
-              <p className="text-sm text-muted-foreground">
-                Our AI extracts merchant, date, items, and amounts automatically
-              </p>
-            </div>
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <h3 className="font-semibold text-foreground">3. Save</h3>
-              <p className="text-sm text-muted-foreground">
-                Review and save the transactions to your account
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {(extractedData || parsedTransactions.length > 0) && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button onClick={handleSaveTransactions} variant="success" className="flex-1 gap-2">
+            <CheckCircle className="w-4 h-4" />
+            Save All Transactions
+          </Button>
+          <Button onClick={() => {
+            setUploadedFile(null);
+            setExtractedData(null);
+            setParsedTransactions([]);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
+          }} variant="outline" className="flex-1">
+            Upload Another File
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ReceiptScanner;
+
