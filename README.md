@@ -49,25 +49,26 @@ Node.js (18+ recommended)
 MongoDB instance running (local or cloud)
 
 1. Clone the repository
-text
+
 git clone <your-repo-url>
 cd receipt-reader
 2. Backend Setup
-text
+
 cd backend
 npm install
 Configure environment variables
 Create a .env file in /backend:
 
-text
+
 MONGO_URI=mongodb://localhost:27017/finance-tracker
 JWT_SECRET=your_very_secret_and_long_random_key
+
 Start the backend server:
 
-text
 node server.js
+
 3. Frontend Setup
-text
+
 cd ../
 npm install
 npm run dev
@@ -103,14 +104,14 @@ Transactions are always associated with the current user (by userId).
 🧑💻 Scripts
 Backend:
 
-text
 npm install         # in /backend
 node server.js
 Frontend:
 
-text
+
 npm install         # in root
 npm run dev
+
 🛡️ Best Practices Followed
 Clean, readable and modular code
 
